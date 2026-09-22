@@ -16,6 +16,7 @@ function numeroParaExtenso(num){if(!isFinite(num))return "";var reais=Math.floor
 /* ===== Constantes ===== */
 var FIXED={name:"JAROD M M JR",email:"CONTATO@JAROD.COM.BR",phone:"31999635303",cnpj:"67.897.810/0001-63"};
 var PIX_FIXED="pix@jarod.com.br";
+var CIDADE_FALLBACK="Belo Horizonte/MG";
 var DEF_PARC=6,MAX_PARC=12;
 var FIELD_IDS=["nome","cpf","rg","email","telefone","placa","renavam","chassi","anoFab","anoModelo","seguro","valor","parcelas","cidade"];
 var CLIENT_FIELDS=["nome","cpf","rg","email","telefone"];
@@ -39,6 +40,7 @@ function getValorParcela(){var t=parseMoney(val("valor"));if(!isFinite(t)||t<=0)
 function getMoney(){var r=val("valor");if(!r)return "R$ #VALOR#";var n=parseMoney(r);return isFinite(n)?formatBRL(n):"R$ "+esc(r);}
 function getExtenso(){var v=parseMoney(val("valor"));return(!isFinite(v)||v<=0)?"#VALOR_EXTENSO#":numeroParaExtenso(v);}
 function atualizarExtenso(){var v=parseMoney(val("valor"));$("valorExtenso").value=(isFinite(v)&&v>0)?numeroParaExtenso(v):"";}
+function getCidade(){var c=val("cidade");return c&&c.charAt(0)!=="#" ? c : CIDADE_FALLBACK;}
 
 /* ===== Templates ===== */
 function renderParcelasRows(n){
@@ -55,9 +57,9 @@ function veiculoTable(){
     +'</table>';
 }
 
-/* ===== Render do contrato ===== */
+/* ===== Render ===== */
 function render(){
-  var nome=val("nome","#NOME#"),cpf=val("cpf","#CPF#"),rg=val("rg","#RG#"),email=val("email","#EMAIL#"),tel=val("telefone","#TELEFONE#"),seguro=val("seguro","#SEGURO#"),n=getParcelasCount();
+  var nome=val("nome","#NOME#"),cpf=val("cpf","#CPF#"),rg=val("rg","#RG#"),email=val("email","#EMAIL#"),tel=val("telefone","#TELEFONE#"),seguro=val("seguro","#SEGURO#"),n=getParcelasCount(),cidade=getCidade();
   var h='<div class="paperhead"><div class="paperbrand"><b>'+FIXED.name+'</b><div>CNPJ '+FIXED.cnpj+'</div></div></div>'
 
   +'<h1>CONTRATO DE PRESTAÇÃO DE SERVIÇOS DE INTERMEDIAÇÃO SECURITÁRIA</h1>'
@@ -81,7 +83,7 @@ function render(){
   +'<h2>CLÁUSULA 1ª — DO OBJETO</h2>'
   +'<p>1.1. O presente contrato tem por objeto formalizar a contratação, pelo CONTRATANTE, dos serviços de intermediação e assessoria prestados pela CONTRATADA, relacionados ao produto securitário <b>'+esc(seguro)+'</b>, bem como o pagamento da respectiva taxa de adesão e ativação.</p>'
   +'<p>1.2. A CONTRATADA atua como intermediária entre o CONTRATANTE e a sociedade seguradora escolhida. A CONTRATADA não é seguradora, não assume risco securitário, não garante cobertura, não regula sinistro e não responde por indenizações ou benefícios previstos na apólice.</p>'
-  +'<p>1.3. O produto securitário contratado está descrito no veículo a seguir identificado:</p>'
+  +'<p>1.3. O produto securitário contratado está vinculado ao veículo a seguir identificado:</p>'
   +veiculoTable()
   +'<p>1.4. O presente instrumento não substitui a proposta, a apólice, o certificado, o endosso nem as condições gerais do seguro emitidas pela seguradora, que permanecem como documentos prevalentes para todos os efeitos relacionados à cobertura.</p>'
 
@@ -98,7 +100,7 @@ function render(){
   +'<p>3.2. O atraso superior a 30 dias autoriza a CONTRATADA a suspender os serviços contratados e a encaminhar o débito para cobrança administrativa ou judicial.</p>'
 
   +'<h2>CLÁUSULA 4ª — DAS OBRIGAÇÕES DA CONTRATADA</h2>'
-  +'<p>4.1. A CONTRATADA se obriga a: (i) intermediar a contratação junto à seguradora escolhida; (ii) prestar as informações necessárias sobre o produto contratado; (iii) encaminhar ao CONTRATANTE os documentos emitidos pela seguradora; (iv) manter sigilo sobre os dados pessoais fornecidos, tratando-os conforme a Lei nº 13.709/2018 (LGPD).</p>'
+  +'<p>4.1. A CONTRATADA se obriga a: (i) intermediar a contratação junto à seguradora escolhida; (ii) prestar as informações necessárias sobre o produto contratado; (iii) encaminhar ao CONTRATANTE os documentos emitidos pela seguradora; (iv) manter sigilo sobre os dados pessoais fornecidos, tratando-os conforme a Lei nº 13.709/2018.</p>'
   +'<p>4.2. A CONTRATADA não se responsabiliza por recusa de cobertura pela seguradora, por sinistros não cobertos, por informações incorretas prestadas pelo CONTRATANTE nem por fatos alheios à sua esfera de controle.</p>'
 
   +'<h2>CLÁUSULA 5ª — DAS OBRIGAÇÕES DO CONTRATANTE</h2>'
@@ -129,7 +131,7 @@ function render(){
   +'<p>10.3. Este contrato é firmado em caráter irrevogável e irretratável, obrigando as partes, seus herdeiros e sucessores.</p>'
 
   +'<p style="margin-top:18px">E, por estarem de acordo, as partes assinam o presente instrumento, declarando ter lido e compreendido todas as cláusulas.</p>'
-  +'<p>'+esc(val("cidade","#CIDADE#"))+', ______ de __________________________ de __________.</p>'
+  +'<p>'+esc(cidade)+', ______ de __________________________ de __________.</p>'
 
   +'<div class="signatures">'
   +'<div><div class="signline">CONTRATANTE<br>Nome: '+esc(nome)+'<br>CPF: '+esc(cpf)+'</div></div>'
@@ -235,23 +237,17 @@ function extrairAnos(txt){
 
 function preencherDoPdf(textoBruto){
   var txt=normalizar(textoBruto);
-
   var placa=extrairPlaca(txt);
   if(placa)$("placa").value=placa;
-
   var ren=extrairRenavam(txt);
   if(ren)$("renavam").value=ren;
-
   var cha=extrairChassi(txt);
   if(cha)$("chassi").value=cha;
-
   var anos=extrairAnos(txt);
   if(anos.fab)$("anoFab").value=anos.fab;
   if(anos.mod)$("anoModelo").value=anos.mod;
-
   atualizarExtenso();
   render();
-
   var achados=[];
   if(placa)achados.push("Placa");
   if(ren)achados.push("Renavam");
@@ -289,7 +285,7 @@ function extrair(){
 
   lerPdf(f).then(function(texto){
     if(!texto||!texto.trim()){
-      st.textContent="O PDF não contém texto. Provavelmente é escaneado (imagem). Use o CRLV-e digital do Detran.";
+      st.textContent="O PDF não contém texto. Provavelmente é escaneado. Use o CRLV-e digital do Detran.";
       st.className="hint";
       btn.disabled=false;
       return;
