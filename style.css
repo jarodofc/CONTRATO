@@ -94,11 +94,7 @@ body{margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;co
 @page{ margin: 15mm; }
 
 @media print{
-  body{
-    background:#fff;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-  }
+  body{background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .topbar,.formcard,.previewtools,.toast{display:none!important}
   .grid{display:block;margin:0}
   .card{background:#fff;border:0;box-shadow:none;border-radius:0}
