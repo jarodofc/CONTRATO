@@ -9,7 +9,9 @@
 <body>
 <div class="app">
   <header class="topbar">
-    <div class="brand"><div><b>JAROD • Contratos</b><span>Gerador de documentos</span></div></div>
+    <div class="brand">
+      <div><b>JAROD • Contratos</b><span>Gerador de documentos</span></div>
+    </div>
     <div class="actions">
       <button class="btn" onclick="App.resetForm()">Limpar</button>
       <button class="btn primary" onclick="App.printContract()">Gerar / Imprimir PDF</button>
@@ -18,7 +20,10 @@
 
   <main class="grid">
     <aside class="card formcard">
-      <div class="cardhead"><div><div class="title">Preencher contrato</div><div class="subtitle">Dados em tempo real.</div></div></div>
+      <div class="cardhead">
+        <div><div class="title">Preencher contrato</div>
+        <div class="subtitle">Dados aparecem em tempo real.</div></div>
+      </div>
 
       <div class="section">
         <div class="sectiontitle">Dados do cliente</div>
@@ -38,17 +43,9 @@
           <div class="field"><label>Renavam</label><input id="renavam" placeholder="XXXXXXXXXXX"></div>
         </div>
         <div class="field"><label>Chassi</label><input id="chassi" placeholder="XXXXXXXXXXXXXXXXX"></div>
-        <div class="field"><label>Marca / Modelo / Versão</label><input id="marcaModelo" placeholder="CHEVROLET/ONIX 1.4MT LT"></div>
         <div class="row">
-          <div class="field"><label>Cor</label><input id="cor" placeholder="Prata"></div>
-          <div class="field"><label>Ano Fab.</label><input id="anoFab" placeholder="2014"></div>
-        </div>
-        <div class="field"><label>Ano Modelo</label><input id="anoModelo" placeholder="2014"></div>
-        <div class="field">
-          <label>CRLV (PDF ou imagem)</label>
-          <input id="crlvFile" type="file" accept="application/pdf,image/*">
-          <button id="btnExtrair" class="btn" style="width:100%;margin-top:6px" onclick="App.extrair()" disabled>Extrair dados do CRLV</button>
-          <p class="hint" id="crlvStatus" style="margin-top:6px">Nenhum arquivo anexado.</p>
+          <div class="field"><label>Ano Fab.</label><input id="anoFab" placeholder="2022"></div>
+          <div class="field"><label>Ano Modelo</label><input id="anoModelo" placeholder="2022"></div>
         </div>
       </div>
 
@@ -66,12 +63,12 @@
 
       <div class="section">
         <div class="sectiontitle">Parcelas</div>
-        <div class="hint">Vencimentos automáticos: 30 dias após hoje, 60, 90...</div>
+        <div class="hint">Vencimentos automáticos (30 dias após hoje, 60, 90...).</div>
         <div id="parcelasForm" style="margin-top:10px"></div>
       </div>
 
       <div class="fixed">
-        <b>Dados fixos</b><br><br>
+        <b>Dados fixos da prestadora</b><br><br>
         JAROD M M JR<br>CNPJ 67.897.810/0001-63<br>CONTATO@JAROD.COM.BR<br>31999635303<br>
         <b>Pix:</b> pix@jarod.com.br
       </div>
@@ -93,8 +90,6 @@
 </div>
 <div class="toast" id="toast"></div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.0.4/dist/tesseract.min.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
