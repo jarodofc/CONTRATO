@@ -12,7 +12,7 @@
     <div class="brand"><div><b>JAROD • Contratos</b><span>Gerador de documentos</span></div></div>
     <div class="actions">
       <button class="btn" onclick="App.resetForm()">Limpar</button>
-      <button class="btn primary" onclick="App.printContract()">Gerar PDF (Salvar como PDF)</button>
+      <button class="btn primary" onclick="App.baixarPdf()">Baixar PDF</button>
     </div>
   </header>
 
@@ -76,7 +76,7 @@
 
       <div class="formactions">
         <button class="btn" onclick="App.fillDemo()">Preencher exemplo</button>
-        <button class="btn primary" onclick="App.printContract()">Gerar contrato</button>
+        <button class="btn primary" onclick="App.baixarPdf()">Baixar PDF</button>
       </div>
     </aside>
 
@@ -92,6 +92,7 @@
 <div class="toast" id="toast"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
