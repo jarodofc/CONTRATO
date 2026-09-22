@@ -6,11 +6,7 @@
 body{margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--text);background:var(--bg);min-height:100vh}
 .app{max-width:1450px;margin:auto;padding:22px}
 
-.topbar{
-  height:80px; display:flex; align-items:center; justify-content:space-between;
-  padding:10px 16px; border:1px solid var(--line);
-  background:rgba(255,255,255,.62); border-radius:22px; box-shadow:var(--sh);
-}
+.topbar{height:80px;display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border:1px solid var(--line);background:rgba(255,255,255,.62);border-radius:22px;box-shadow:var(--sh)}
 .brand b{font-size:16px}
 .brand span{display:block;color:var(--muted);font-size:12px}
 .actions{display:flex;gap:8px}
