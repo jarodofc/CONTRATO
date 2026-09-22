@@ -1,6 +1,10 @@
 (function(){
 "use strict";
 
+if(typeof pdfjsLib!=="undefined"){
+  pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+}
+
 /* ===== Número por extenso (PT-BR) ===== */
 var _U=["zero","um","dois","três","quatro","cinco","seis","sete","oito","nove","dez","onze","doze","treze","quatorze","quinze","dezesseis","dezessete","dezoito","dezenove"];
 var _D=["","","vinte","trinta","quarenta","cinquenta","sessenta","setenta","oitenta","noventa"];
@@ -16,7 +20,7 @@ var DEF_PARC=6,MAX_PARC=12;
 var FIELD_IDS=["nome","cpf","rg","email","telefone","placa","renavam","chassi","anoFab","anoModelo","seguro","valor","parcelas","cidade"];
 var CLIENT_FIELDS=["nome","cpf","rg","email","telefone"];
 var VEH_FIELDS=["placa","renavam","chassi","anoFab","anoModelo"];
-var state={vencimentos:{}};
+var state={vencimentos:{},crlvFile:null};
 
 /* ===== Helpers ===== */
 function $(id){return document.getElementById(id);}
@@ -51,7 +55,7 @@ function veiculoTable(){
     +'</table>';
 }
 
-/* ===== Render principal ===== */
+/* ===== Render ===== */
 function render(){
   var nome=val("nome","#NOME#"),cpf=val("cpf","#CPF#"),rg=val("rg","#RG#"),email=val("email","#EMAIL#"),tel=val("telefone","#TELEFONE#"),seguro=val("seguro","#SEGURO#"),n=getParcelasCount();
   var h='<div class="paperhead"><div class="paperbrand"><b>'+FIXED.name+'</b><div>CNPJ '+FIXED.cnpj+'</div></div></div>'
@@ -82,7 +86,7 @@ function render(){
   $("status").textContent=cf+"/5 cliente • "+vf+"/5 veículo";
 }
 
-/* ===== Parcelas (auto) ===== */
+/* ===== Parcelas ===== */
 function buildParcelasForm(){
   var n=getParcelasCount();
   for(var m=1;m<=n;m++){if(!state.vencimentos[m])state.vencimentos[m]=addDaysISO(30*m);}
@@ -102,25 +106,126 @@ function buildParcelasForm(){
   }
 }
 
+/* ===== PDF → imagem ===== */
+function pdfParaImagem(arquivo){
+  return new Promise(function(resolve,reject){
+    if(typeof pdfjsLib==="undefined"){reject(new Error("pdf.js não carregou"));return;}
+    var reader=new FileReader();
+    reader.onload=function(){
+      var bytes=new Uint8Array(reader.result);
+      pdfjsLib.getDocument({data:bytes}).promise.then(function(pdf){
+        pdf.getPage(1).then(function(page){
+          var viewport=page.getViewport({scale:2.0});
+          var canvas=document.createElement("canvas");
+          canvas.width=viewport.width;canvas.height=viewport.height;
+          var ctx=canvas.getContext("2d");
+          page.render({canvasContext:ctx,viewport:viewport}).promise.then(function(){
+            resolve(canvas.toDataURL("image/png"));
+          });
+        });
+      }).catch(reject);
+    };
+    reader.onerror=reject;
+    reader.readAsArrayBuffer(arquivo);
+  });
+}
+
+/* ===== OCR ===== */
+function rodarOcr(fonteImagem,cbStatus){
+  if(typeof Tesseract==="undefined"){alert("Tesseract não carregou. Verifique a internet.");return;}
+  Tesseract.recognize(fonteImagem,"por",{logger:function(m){if(m.status==="recognizing text")cbStatus(Math.round(m.progress*100));}})
+  .then(function(res){preencherDoOcr((res.data.text||"").toUpperCase());toast("Dados extraídos. Revise antes de gerar.");})
+  .catch(function(err){alert("Falha no OCR: "+err.message);});
+}
+
+function preencherDoOcr(txt){
+  var t=String(txt||"").replace(/\s+/g," ");
+
+  var mPlaca=t.match(/\b([A-Z]{3}[0-9][A-Z0-9][0-9]{2})\b/);
+  if(mPlaca)$("placa").value=mPlaca[1];
+
+  var mRen=t.match(/RENAVAM[^\d]{0,15}(\d[\d\s]{9,13}\d)/);
+  if(mRen)$("renavam").value=mRen[1].replace(/\s/g,"");
+  else{var mRen2=t.match(/\b(\d{11})\b/);if(mRen2)$("renavam").value=mRen2[1];}
+
+  var mCha=t.match(/CHASSI[^\w]{0,15}([A-HJ-NPR-Z0-9]{17})/);
+  if(mCha)$("chassi").value=mCha[1];
+  else{var mCha2=t.match(/\b([A-HJ-NPR-Z0-9]{17})\b/);if(mCha2)$("chassi").value=mCha2[1];}
+
+  var mAno=t.match(/\b(19\d{2}|20\d{2})\b[^\d]{0,10}\b(19\d{2}|20\d{2})\b/);
+  if(mAno){$("anoFab").value=mAno[1];$("anoModelo").value=mAno[2];}
+
+  atualizarExtenso();render();
+}
+
+/* ===== Upload + extração ===== */
+function handleCrlv(e){
+  var f=e.target.files&&e.target.files[0];
+  var st=$("crlvStatus"),btn=$("btnExtrair");
+  if(!f){state.crlvFile=null;st.textContent="Nenhum arquivo anexado.";st.className="hint";if(btn)btn.disabled=true;return;}
+  state.crlvFile=f;
+  st.textContent="Anexado: "+f.name+" — clique em Extrair dados.";
+  st.className="hint file-ok";
+  if(btn)btn.disabled=false;
+  toast("Arquivo anexado. Clique em Extrair dados.");
+}
+
+function extrair(){
+  var f=state.crlvFile;
+  if(!f){alert("Anexe um PDF ou imagem primeiro.");return;}
+  var st=$("crlvStatus"),btn=$("btnExtrair");
+  btn.disabled=true;
+  if(f.type==="application/pdf"||/\.pdf$/i.test(f.name)){
+    st.textContent="Convertendo PDF em imagem...";
+    st.className="hint";
+    pdfParaImagem(f).then(function(dataUrl){
+      st.textContent="Lendo imagem do PDF com OCR... 0%";
+      rodarOcr(dataUrl,function(p){st.textContent="OCR do PDF: "+p+"%";});
+      setTimeout(function(){st.textContent="OCR concluído. Confira os campos.";st.className="hint file-ok";btn.disabled=false;},1500);
+    }).catch(function(err){
+      st.textContent="Falha ao converter PDF: "+err.message;
+      st.className="hint";
+      btn.disabled=false;
+    });
+  } else if(f.type&&f.type.indexOf("image/")===0){
+    var rd=new FileReader();
+    rd.onload=function(ev){
+      st.textContent="OCR na imagem... 0%";
+      rodarOcr(ev.target.result,function(p){st.textContent="OCR: "+p+"%";});
+      setTimeout(function(){st.textContent="OCR concluído. Confira os campos.";st.className="hint file-ok";btn.disabled=false;},1500);
+    };
+    rd.readAsDataURL(f);
+  } else {
+    st.textContent="Formato não suportado. Use PDF ou imagem.";
+    st.className="hint";
+    btn.disabled=false;
+  }
+}
+
 /* ===== Botões ===== */
 function printContract(){render();window.print();}
+
 function resetForm(){
   for(var i=0;i<FIELD_IDS.length;i++){if($(FIELD_IDS[i]))$(FIELD_IDS[i]).value="";}
   $("parcelas").value=DEF_PARC;
-  state.vencimentos={};
+  if($("crlvFile"))$("crlvFile").value="";
+  if($("crlvStatus")){$("crlvStatus").textContent="Nenhum arquivo anexado.";$("crlvStatus").className="hint";}
+  if($("btnExtrair"))$("btnExtrair").disabled=true;
+  state.crlvFile=null;state.vencimentos={};
   buildParcelasForm();atualizarExtenso();render();toast("Formulário limpo.");
 }
+
 function fillDemo(){
   $("nome").value="CLIENTE EXEMPLO";$("cpf").value="000.000.000-00";$("rg").value="00.000.000-0";
   $("email").value="cliente@exemplo.com";$("telefone").value="(00) 00000-0000";
   $("placa").value="ABC1D23";$("renavam").value="01234567890";$("chassi").value="9BWZZZ377VT004251";
-  $("anoFab").value="2022";$("anoModelo").value="2022";
+  $("anoFab").value="2014";$("anoModelo").value="2014";
   $("seguro").value="Seguro / Plano contratado";$("valor").value="1.200,00";$("parcelas").value=DEF_PARC;$("cidade").value="Belo Horizonte/MG";
   state.vencimentos={};buildParcelasForm();atualizarExtenso();render();toast("Exemplo preenchido.");
 }
 
 /* ===== Exposição global ===== */
-window.App={resetForm:resetForm,printContract:printContract,fillDemo:fillDemo};
+window.App={resetForm:resetForm,printContract:printContract,fillDemo:fillDemo,extrair:extrair};
 
 /* ===== Listeners ===== */
 for(var i=0;i<FIELD_IDS.length;i++){
@@ -131,6 +236,7 @@ for(var i=0;i<FIELD_IDS.length;i++){
     else{el.addEventListener("input",render);}
   })(FIELD_IDS[i]);
 }
+if($("crlvFile"))$("crlvFile").addEventListener("change",handleCrlv);
 
 /* ===== Init ===== */
 buildParcelasForm();atualizarExtenso();render();
