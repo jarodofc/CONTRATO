@@ -51,13 +51,13 @@ function veiculoTable(){
     +'<tr><td>Placa</td><td>'+esc(val("placa","#PLACA#"))+'</td></tr>'
     +'<tr><td>Renavam</td><td>'+esc(val("renavam","#RENAVAM#"))+'</td></tr>'
     +'<tr><td>Chassi</td><td>'+esc(val("chassi","#CHASSI#"))+'</td></tr>'
-    +'<tr><td>Marca / Modelo</td><td>'+esc(val("marcaModelo","#MARCA_MODELO#"))+'</td></tr>'
+    +'<tr><td>Marca / Modelo / Versão</td><td>'+esc(val("marcaModelo","#MARCA_MODELO#"))+'</td></tr>'
     +'<tr><td>Cor</td><td>'+esc(val("cor","#COR#"))+'</td></tr>'
     +'<tr><td>Ano Fab. / Modelo</td><td>'+esc(val("anoFab","#ANO_FAB#"))+' / '+esc(val("anoModelo","#ANO_MODELO#"))+'</td></tr>'
     +'</table>';
 }
 
-/* ===== Render principal ===== */
+/* ===== Render ===== */
 function render(){
   var nome=val("nome","#NOME#"),cpf=val("cpf","#CPF#"),rg=val("rg","#RG#"),email=val("email","#EMAIL#"),tel=val("telefone","#TELEFONE#"),seguro=val("seguro","#SEGURO#"),n=getParcelasCount();
   var h='<div class="paperhead"><div class="paperbrand"><b>'+FIXED.name+'</b><div>CNPJ '+FIXED.cnpj+'</div></div></div>'
@@ -139,22 +139,41 @@ function rodarOcr(fonteImagem,cbStatus){
   .then(function(res){preencherDoOcr((res.data.text||"").toUpperCase());toast("Dados extraídos. Revise antes de gerar.");})
   .catch(function(err){alert("Falha no OCR: "+err.message);});
 }
+
 function preencherDoOcr(txt){
   var t=String(txt||"").replace(/\s+/g," ");
+
   var mPlaca=t.match(/\b([A-Z]{3}[0-9][A-Z0-9][0-9]{2})\b/);
   if(mPlaca)$("placa").value=mPlaca[1];
+
   var mRen=t.match(/RENAVAM[^\d]{0,15}(\d[\d\s]{9,13}\d)/);
   if(mRen)$("renavam").value=mRen[1].replace(/\s/g,"");
   else{var mRen2=t.match(/\b(\d{11})\b/);if(mRen2)$("renavam").value=mRen2[1];}
+
   var mCha=t.match(/CHASSI[^\w]{0,15}([A-HJ-NPR-Z0-9]{17})/);
   if(mCha)$("chassi").value=mCha[1];
   else{var mCha2=t.match(/\b([A-HJ-NPR-Z0-9]{17})\b/);if(mCha2)$("chassi").value=mCha2[1];}
-  var mMar=t.match(/(?:MARCA\s*\/?\s*MODELO|MARCA MODELO)[:\s]{0,5}([A-Z0-9][A-Z0-9 \/\.\-]{2,40})/);
-  if(mMar)$("marcaModelo").value=mMar[1].trim();
+
+  /* ===== MARCA / MODELO / VERSÃO ===== */
+  /* Formato do CRLV: MARCA/MODELO VERSÃO  (ex: CHEVROLET/ONIX 1.4MT LT) */
+  var mMar=t.match(/(?:MARCA\s*\/?\s*MODELO|MARCA MODELO)[^\w]{0,5}([A-Z0-9][A-Z0-9 \/\.\-]{2,80})/);
+  if(!mMar){
+    /* fallback: pega bloco com barra no meio, tipo CHEVROLET/ONIX 1.4MT LT */
+    mMar=t.match(/\b([A-Z]{3,}[\/][A-Z0-9][A-Z0-9 \/\.\-]{2,80})/);
+  }
+  if(mMar){
+    var mm=mMar[1].trim().replace(/\s+/g," ");
+    /* corta se pegou rótulos seguintes juntos */
+    mm=mm.replace(/\s*(ANO|COR|CHASSI|RENAVAM|PLACA|COMBUST|CATEG|ESPEC|POTENC|CILIND|FABRIC|MODELO|MARCA)[\s:].*$/,"").trim();
+    $("marcaModelo").value=mm;
+  }
+
   var mAno=t.match(/\b(19\d{2}|20\d{2})\b[^\d]{0,10}\b(19\d{2}|20\d{2})\b/);
   if(mAno){$("anoFab").value=mAno[1];$("anoModelo").value=mAno[2];}
+
   var mCor=t.match(/COR[:\s]{0,5}([A-Z]{3,15})/);
   if(mCor)$("cor").value=mCor[1].trim();
+
   atualizarExtenso();render();
 }
 
@@ -169,6 +188,7 @@ function handleCrlv(e){
   if(btn)btn.disabled=false;
   toast("Arquivo anexado. Clique em Extrair dados.");
 }
+
 function extrair(){
   var f=state.crlvFile;
   if(!f){alert("Anexe um PDF ou imagem primeiro.");return;}
@@ -203,6 +223,7 @@ function extrair(){
 
 /* ===== Botões ===== */
 function printContract(){render();window.print();}
+
 function resetForm(){
   for(var i=0;i<FIELD_IDS.length;i++){if($(FIELD_IDS[i]))$(FIELD_IDS[i]).value="";}
   $("parcelas").value=DEF_PARC;
@@ -212,11 +233,12 @@ function resetForm(){
   state.crlvFile=null;state.vencimentos={};
   buildParcelasForm();atualizarExtenso();render();toast("Formulário limpo.");
 }
+
 function fillDemo(){
   $("nome").value="CLIENTE EXEMPLO";$("cpf").value="000.000.000-00";$("rg").value="00.000.000-0";
   $("email").value="cliente@exemplo.com";$("telefone").value="(00) 00000-0000";
   $("placa").value="ABC1D23";$("renavam").value="01234567890";$("chassi").value="9BWZZZ377VT004251";
-  $("marcaModelo").value="VW/Gol 1.0";$("cor").value="Prata";$("anoFab").value="2014";$("anoModelo").value="2014";
+  $("marcaModelo").value="CHEVROLET/ONIX 1.4MT LT";$("cor").value="Prata";$("anoFab").value="2014";$("anoModelo").value="2014";
   $("seguro").value="Seguro / Plano contratado";$("valor").value="1.200,00";$("parcelas").value=DEF_PARC;$("cidade").value="Belo Horizonte/MG";
   state.vencimentos={};buildParcelasForm();atualizarExtenso();render();toast("Exemplo preenchido.");
 }
