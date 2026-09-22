@@ -27,23 +27,23 @@
           <div class="field"><label>CPF</label><input id="cpf" placeholder="#CPF#"></div>
           <div class="field"><label>RG</label><input id="rg" placeholder="#RG#"></div>
         </div>
-        <div class="field"><label>E-mail</label><input id="email" placeholder="#EMAIL#"></div>
+        <div class="field"><label>E-mail</label><input id="email" type="email" placeholder="#EMAIL#"></div>
         <div class="field"><label>Telefone</label><input id="telefone" placeholder="#TELEFONE#"></div>
       </div>
 
       <div class="section">
         <div class="sectiontitle">Dados do veículo</div>
         <div class="row">
-          <div class="field"><label>Placa</label><input id="placa" placeholder="ABC1D23"></div>
-          <div class="field"><label>Renavam</label><input id="renavam" placeholder="XXXXXXXXXXX"></div>
+          <div class="field"><label>Placa</label><input id="placa" placeholder="ABC1D23" maxlength="8"></div>
+          <div class="field"><label>Renavam</label><input id="renavam" placeholder="XXXXXXXXXXX" maxlength="11" inputmode="numeric"></div>
         </div>
-        <div class="field"><label>Chassi</label><input id="chassi" placeholder="XXXXXXXXXXXXXXXXX"></div>
+        <div class="field"><label>Chassi</label><input id="chassi" placeholder="XXXXXXXXXXXXXXXXX" maxlength="17" style="text-transform:uppercase"></div>
         <div class="row">
-          <div class="field"><label>Ano Fab.</label><input id="anoFab" placeholder="2014"></div>
-          <div class="field"><label>Ano Modelo</label><input id="anoModelo" placeholder="2014"></div>
+          <div class="field"><label>Ano Fabricação</label><input id="anoFab" placeholder="2014" maxlength="4" inputmode="numeric"></div>
+          <div class="field"><label>Ano Modelo</label><input id="anoModelo" placeholder="2014" maxlength="4" inputmode="numeric"></div>
         </div>
         <div class="field">
-          <label>CRLV (PDF ou imagem)</label>
+          <label>CRLV (PDF digital ou imagem)</label>
           <input id="crlvFile" type="file" accept="application/pdf,image/*">
           <button id="btnExtrair" class="btn" style="width:100%;margin-top:6px" onclick="App.extrair()" disabled>Extrair dados do CRLV</button>
           <p class="hint" id="crlvStatus" style="margin-top:6px">Nenhum arquivo anexado.</p>
@@ -52,9 +52,9 @@
 
       <div class="section">
         <div class="sectiontitle">Contratação</div>
-        <div class="field"><label>Seguro / plano / produto</label><input id="seguro" placeholder="#SEGURO#"></div>
+        <div class="field"><label>Produto / serviço contratado</label><input id="seguro" placeholder="#SEGURO#"></div>
         <div class="row">
-          <div class="field"><label>Valor total</label><input id="valor" placeholder="Ex.: 1.200,00"></div>
+          <div class="field"><label>Valor total</label><input id="valor" placeholder="Ex.: 1.200,00" inputmode="decimal"></div>
           <div class="field"><label>Nº de parcelas</label><input id="parcelas" type="number" min="1" max="12" value="6"></div>
         </div>
         <div class="field"><label>Valor por extenso (automático)</label><input id="valorExtenso" readonly></div>
@@ -64,7 +64,7 @@
 
       <div class="section">
         <div class="sectiontitle">Parcelas</div>
-        <div class="hint">Vencimentos automáticos (30 dias após hoje, 60, 90...).</div>
+        <div class="hint">Vencimentos automáticos (30 dias após hoje, 60, 90 e assim por diante).</div>
         <div id="parcelasForm" style="margin-top:10px"></div>
       </div>
 
