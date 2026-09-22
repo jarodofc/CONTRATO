@@ -33,6 +33,16 @@ function isoToBR(iso){if(!iso)return "";var p=iso.split("-");return p[2]+"/"+p[1
 function addDaysISO(d){var x=new Date();x.setHours(12,0,0,0);x.setDate(x.getDate()+d);var y=x.getFullYear(),m=("0"+(x.getMonth()+1)).slice(-2),dd=("0"+x.getDate()).slice(-2);return y+"-"+m+"-"+dd;}
 function toast(t){var x=$("toast");if(!x)return;x.textContent=t;x.style.display="block";setTimeout(function(){x.style.display="none";},2200);}
 
+/* Remove acentos e caracteres não suportados pelo Helvetica do jsPDF */
+function ascii(s){
+  return String(s||"")
+    .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+    .replace(/[–—]/g,"-")
+    .replace(/[“”]/g,'"')
+    .replace(/[‘’]/g,"'")
+    .replace(/[^\x20-\x7E]/g,"");
+}
+
 /* ===== Cálculos ===== */
 function getParcelasCount(){var r=parseInt(val("parcelas",String(DEF_PARC)),10);if(!isFinite(r))return DEF_PARC;return Math.max(1,Math.min(MAX_PARC,r));}
 function getVencimento(i){var iso=state.vencimentos[i];return iso?isoToBR(iso):"#VENCIMENTO#";}
@@ -57,89 +67,58 @@ function veiculoTable(){
     +'</table>';
 }
 
-/* ===== Render ===== */
+/* ===== Render da pré-visualização ===== */
 function render(){
   var nome=val("nome","#NOME#"),cpf=val("cpf","#CPF#"),rg=val("rg","#RG#"),email=val("email","#EMAIL#"),tel=val("telefone","#TELEFONE#"),seguro=val("seguro","#SEGURO#"),n=getParcelasCount(),cidade=getCidade();
   var h='<div class="paperhead"><div class="paperbrand"><b>'+FIXED.name+'</b><div>CNPJ '+FIXED.cnpj+'</div></div></div>'
-
   +'<h1>CONTRATO DE PRESTAÇÃO DE SERVIÇOS DE INTERMEDIAÇÃO SECURITÁRIA</h1>'
   +'<div class="lead">Instrumento particular de adesão e ativação de seguro, com intermediação da CONTRATADA</div>'
-
   +'<div class="parties">'
-  +'<div class="party"><div class="partyhead">CONTRATANTE</div>'
-  +'<p><b>Nome:</b> '+esc(nome)+'</p>'
-  +'<p><b>CPF:</b> '+esc(cpf)+'</p>'
-  +'<p><b>RG:</b> '+esc(rg)+'</p>'
-  +'<p><b>E-mail:</b> '+esc(email)+'</p>'
-  +'<p><b>Telefone:</b> '+esc(tel)+'</p></div>'
-  +'<div class="party"><div class="partyhead">CONTRATADA</div>'
-  +'<p><b>Razão social:</b> '+FIXED.name+'</p>'
-  +'<p><b>CNPJ:</b> '+FIXED.cnpj+'</p>'
-  +'<p><b>E-mail:</b> '+FIXED.email+'</p>'
-  +'<p><b>Telefone:</b> '+FIXED.phone+'</p></div></div>'
-
+  +'<div class="party"><div class="partyhead">CONTRATANTE</div><p><b>Nome:</b> '+esc(nome)+'</p><p><b>CPF:</b> '+esc(cpf)+'</p><p><b>RG:</b> '+esc(rg)+'</p><p><b>E-mail:</b> '+esc(email)+'</p><p><b>Telefone:</b> '+esc(tel)+'</p></div>'
+  +'<div class="party"><div class="partyhead">CONTRATADA</div><p><b>Razão social:</b> '+FIXED.name+'</p><p><b>CNPJ:</b> '+FIXED.cnpj+'</p><p><b>E-mail:</b> '+FIXED.email+'</p><p><b>Telefone:</b> '+FIXED.phone+'</p></div></div>'
   +'<p>As partes acima qualificadas têm, entre si, justo e contratado o presente instrumento, que se regerá pelas cláusulas e condições a seguir, às quais declaram ter lido, compreendido e aceito integralmente.</p>'
-
   +'<h2>CLÁUSULA 1ª — DO OBJETO</h2>'
-  +'<p>1.1. O presente contrato tem por objeto formalizar a contratação, pelo CONTRATANTE, dos serviços de intermediação e assessoria prestados pela CONTRATADA, relacionados ao produto securitário <b>'+esc(seguro)+'</b>, bem como o pagamento da respectiva taxa de adesão e ativação.</p>'
-  +'<p>1.2. A CONTRATADA atua como intermediária entre o CONTRATANTE e a sociedade seguradora escolhida. A CONTRATADA não é seguradora, não assume risco securitário, não garante cobertura, não regula sinistro e não responde por indenizações ou benefícios previstos na apólice.</p>'
-  +'<p>1.3. O produto securitário contratado está vinculado ao veículo a seguir identificado:</p>'
+  +'<p>1.1. O presente contrato tem por objeto formalizar a contratação dos serviços de intermediação e assessoria prestados pela CONTRATADA, relacionados ao produto securitário <b>'+esc(seguro)+'</b>, bem como o pagamento da respectiva taxa de adesão e ativação.</p>'
+  +'<p>1.2. A CONTRATADA atua como intermediária entre o CONTRATANTE e a seguradora. A CONTRATADA não é seguradora, não assume risco securitário, não garante cobertura, não regula sinistro e não responde por indenizações previstas na apólice.</p>'
+  +'<p>1.3. O produto está vinculado ao veículo a seguir identificado:</p>'
   +veiculoTable()
-  +'<p>1.4. O presente instrumento não substitui a proposta, a apólice, o certificado, o endosso nem as condições gerais do seguro emitidas pela seguradora, que permanecem como documentos prevalentes para todos os efeitos relacionados à cobertura.</p>'
-
+  +'<p>1.4. Este instrumento não substitui a proposta, a apólice, o certificado, o endosso nem as condições gerais do seguro, que permanecem prevalentes para todos os efeitos de cobertura.</p>'
   +'<h2>CLÁUSULA 2ª — DO VALOR E DA FORMA DE PAGAMENTO</h2>'
-  +'<p>2.1. Pela intermediação e pelos serviços de adesão e ativação, o CONTRATANTE pagará à CONTRATADA o valor total de <b>'+esc(getMoney())+'</b> ('+esc(getExtenso())+').</p>'
-  +'<p>2.2. O pagamento será realizado em <b>'+n+' parcelas</b>, exclusivamente por meio de Pix, conforme cronograma abaixo.</p>'
+  +'<p>2.1. Pela intermediação e adesão, o CONTRATANTE pagará à CONTRATADA o valor total de <b>'+esc(getMoney())+'</b> ('+esc(getExtenso())+').</p>'
+  +'<p>2.2. O pagamento será realizado em <b>'+n+' parcelas</b>, exclusivamente por Pix, conforme cronograma abaixo.</p>'
   +'<table class="paytable"><thead><tr><th>Parcela</th><th>Valor</th><th>Vencimento</th></tr></thead><tbody>'+renderParcelasRows(n)+'</tbody></table>'
   +'<table class="pix"><tr><td>CHAVE PIX</td><td>'+esc(PIX_FIXED)+'</td></tr><tr><td>Titular</td><td>'+FIXED.name+'</td></tr><tr><td>CNPJ</td><td>'+FIXED.cnpj+'</td></tr></table>'
-  +'<p>2.3. O pagamento é considerado efetuado somente após a confirmação, pelo banco, do crédito na conta da CONTRATADA. Os comprovantes de Pix deverão ser guardados pelo CONTRATANTE pelo prazo mínimo de cinco anos.</p>'
-  +'<p>2.4. O valor previsto nesta cláusula remunera exclusivamente a intermediação e a taxa de adesão e ativação, não correspondendo a prêmio de seguro.</p>'
-
+  +'<p>2.3. O pagamento é considerado efetuado somente após a confirmação do crédito na conta da CONTRATADA. Os comprovantes deverão ser guardados pelo prazo mínimo de cinco anos.</p>'
+  +'<p>2.4. O valor remunera exclusivamente a intermediação e a taxa de adesão, não correspondendo a prêmio de seguro.</p>'
   +'<h2>CLÁUSULA 3ª — DO ATRASO E DO INADIMPLEMENTO</h2>'
-  +'<p>3.1. O atraso no pagamento de qualquer parcela acarretará multa moratória de 2% sobre o valor em atraso, acrescida de juros de mora de 1% ao mês, calculados pro rata die, sem prejuízo da atualização monetária pelo índice IPCA.</p>'
-  +'<p>3.2. O atraso superior a 30 dias autoriza a CONTRATADA a suspender os serviços contratados e a encaminhar o débito para cobrança administrativa ou judicial.</p>'
-
+  +'<p>3.1. O atraso acarretará multa moratória de 2% sobre o valor em atraso, acrescida de juros de mora de 1% ao mês, calculados pro rata die, sem prejuízo da correção monetária pelo IPCA.</p>'
+  +'<p>3.2. O atraso superior a 30 dias autoriza a suspensão dos serviços e o encaminhamento do débito para cobrança.</p>'
   +'<h2>CLÁUSULA 4ª — DAS OBRIGAÇÕES DA CONTRATADA</h2>'
-  +'<p>4.1. A CONTRATADA se obriga a: (i) intermediar a contratação junto à seguradora escolhida; (ii) prestar as informações necessárias sobre o produto contratado; (iii) encaminhar ao CONTRATANTE os documentos emitidos pela seguradora; (iv) manter sigilo sobre os dados pessoais fornecidos, tratando-os conforme a Lei nº 13.709/2018.</p>'
-  +'<p>4.2. A CONTRATADA não se responsabiliza por recusa de cobertura pela seguradora, por sinistros não cobertos, por informações incorretas prestadas pelo CONTRATANTE nem por fatos alheios à sua esfera de controle.</p>'
-
+  +'<p>4.1. A CONTRATADA se obriga a intermediar a contratação, prestar informações sobre o produto, encaminhar os documentos emitidos pela seguradora e manter sigilo sobre os dados pessoais, tratando-os conforme a Lei nº 13.709/2018.</p>'
+  +'<p>4.2. A CONTRATADA não se responsabiliza por recusa de cobertura, por sinistros não cobertos, por informações incorretas prestadas pelo CONTRATANTE nem por fatos alheios à sua esfera de controle.</p>'
   +'<h2>CLÁUSULA 5ª — DAS OBRIGAÇÕES DO CONTRATANTE</h2>'
-  +'<p>5.1. O CONTRATANTE se obriga a: (i) fornecer informações verdadeiras, exatas e completas; (ii) manter os dados cadastrais atualizados; (iii) pagar pontualmente as parcelas ajustadas; (iv) ler e observar as condições gerais da apólice emitida pela seguradora.</p>'
-  +'<p>5.2. A prestação de informação falsa, inexata ou incompleta pelo CONTRATANTE pode acarretar a recusa de cobertura pela seguradora, sem qualquer responsabilidade da CONTRATADA.</p>'
-
+  +'<p>5.1. O CONTRATANTE se obriga a fornecer informações verdadeiras, manter os dados atualizados, pagar pontualmente as parcelas e observar as condições gerais da apólice.</p>'
+  +'<p>5.2. Informação falsa ou inexata pode acarretar recusa de cobertura pela seguradora, sem responsabilidade da CONTRATADA.</p>'
   +'<h2>CLÁUSULA 6ª — DA RESCISÃO</h2>'
-  +'<p>6.1. O presente contrato pode ser rescindido: (i) por acordo entre as partes; (ii) por inadimplemento de qualquer obrigação, após notificação prévia de 5 dias; (iii) por exercício do direito de arrependimento previsto no art. 49 do Código de Defesa do Consumidor, quando aplicável, no prazo legal, com devolução dos valores pagos nos termos da lei.</p>'
-  +'<p>6.2. A rescisão não afasta a obrigação de pagamento das parcelas vencidas até a data da efetiva rescisão, nem das penalidades eventualmente devidas.</p>'
-
+  +'<p>6.1. O contrato pode ser rescindido por acordo entre as partes, por inadimplemento após notificação prévia de 5 dias, ou por exercício do direito de arrependimento previsto no art. 49 do CDC, quando aplicável, no prazo legal.</p>'
+  +'<p>6.2. A rescisão não afasta a obrigação de pagamento das parcelas vencidas até a data da efetiva rescisão nem das penalidades devidas.</p>'
   +'<h2>CLÁUSULA 7ª — DA PROTEÇÃO DE DADOS (LGPD)</h2>'
-  +'<p>7.1. As partes reconhecem que os dados pessoais compartilhados neste instrumento serão tratados para as finalidades estritamente relacionadas à execução do contrato, nos termos da Lei nº 13.709/2018, sendo vedada a utilização para finalidades diversas sem consentimento específico.</p>'
-  +'<p>7.2. O CONTRATANTE pode exercer os direitos previstos no art. 18 da LGPD por meio dos canais de comunicação informados neste contrato.</p>'
-
+  +'<p>7.1. Os dados pessoais serão tratados para as finalidades estritamente relacionadas à execução deste contrato, nos termos da Lei nº 13.709/2018, sendo vedada a utilização para finalidades diversas sem consentimento específico.</p>'
+  +'<p>7.2. O CONTRATANTE pode exercer os direitos do art. 18 da LGPD pelos canais indicados neste contrato.</p>'
   +'<h2>CLÁUSULA 8ª — DAS COMUNICAÇÕES</h2>'
-  +'<p>8.1. As partes elegem os canais abaixo para todas as comunicações decorrentes deste contrato, inclusive notificações e avisos.</p>'
-  +'<div class="comms">'
-  +'<div><strong>CONTRATANTE</strong>Telefone/WhatsApp: '+esc(tel)+'<br>E-mail: '+esc(email)+'</div>'
-  +'<div><strong>CONTRATADA</strong>Telefone/WhatsApp: '+FIXED.phone+'<br>E-mail: '+FIXED.email+'</div></div>'
-  +'<p>8.2. Considera-se válida a comunicação enviada para o e-mail ou para o número de WhatsApp informados, presumindo-se o recebimento após 24 horas do envio.</p>'
-
+  +'<p>8.1. As partes elegem os canais abaixo para todas as comunicações decorrentes deste contrato.</p>'
+  +'<div class="comms"><div><strong>CONTRATANTE</strong>Telefone/WhatsApp: '+esc(tel)+'<br>E-mail: '+esc(email)+'</div><div><strong>CONTRATADA</strong>Telefone/WhatsApp: '+FIXED.phone+'<br>E-mail: '+FIXED.email+'</div></div>'
+  +'<p>8.2. Considera-se válida a comunicação enviada para o e-mail ou WhatsApp informados, presumindo-se o recebimento após 24 horas do envio.</p>'
   +'<h2>CLÁUSULA 9ª — DO FORO</h2>'
-  +'<p>9.1. Fica eleito o foro do domicílio do CONTRATANTE para dirimir eventuais controvérsias oriundas deste contrato, conforme art. 101, I, do Código de Defesa do Consumidor, quando aplicável a relação de consumo.</p>'
-
+  +'<p>9.1. Fica eleito o foro do domicílio do CONTRATANTE para dirimir controvérsias oriundas deste contrato, conforme art. 101, I, do CDC, quando aplicável a relação de consumo.</p>'
   +'<h2>CLÁUSULA 10ª — DAS DISPOSIÇÕES GERAIS</h2>'
-  +'<p>10.1. A tolerância de qualquer das partes quanto ao descumprimento de obrigação prevista neste instrumento não constitui novação, renúncia ou alteração do pactuado.</p>'
+  +'<p>10.1. A tolerância quanto ao descumprimento de obrigação não constitui novação, renúncia ou alteração do pactuado.</p>'
   +'<p>10.2. A eventual nulidade de qualquer cláusula não prejudica as demais, que permanecem válidas e eficazes.</p>'
   +'<p>10.3. Este contrato é firmado em caráter irrevogável e irretratável, obrigando as partes, seus herdeiros e sucessores.</p>'
-
   +'<p style="margin-top:18px">E, por estarem de acordo, as partes assinam o presente instrumento, declarando ter lido e compreendido todas as cláusulas.</p>'
   +'<p>'+esc(cidade)+', ______ de __________________________ de __________.</p>'
-
-  +'<div class="signatures">'
-  +'<div><div class="signline">CONTRATANTE<br>Nome: '+esc(nome)+'<br>CPF: '+esc(cpf)+'</div></div>'
-  +'<div><div class="signline">CONTRATADA<br>Nome: '+FIXED.name+'<br>CNPJ: '+FIXED.cnpj+'</div></div>'
-  +'</div>';
-
+  +'<div class="signatures"><div><div class="signline">CONTRATANTE<br>Nome: '+esc(nome)+'<br>CPF: '+esc(cpf)+'</div></div><div><div class="signline">CONTRATADA<br>Nome: '+FIXED.name+'<br>CNPJ: '+FIXED.cnpj+'</div></div></div>';
   $("paper").innerHTML=h;
-
   var cf=0,i;for(i=0;i<CLIENT_FIELDS.length;i++){var v=val(CLIENT_FIELDS[i]);if(v&&v.charAt(0)!=="#")cf++;}
   var vf=0;for(i=0;i<VEH_FIELDS.length;i++){var w=val(VEH_FIELDS[i]);if(w&&w.charAt(0)!=="#")vf++;}
   $("status").textContent=cf+"/5 cliente • "+vf+"/5 veículo";
@@ -165,7 +144,7 @@ function buildParcelasForm(){
   }
 }
 
-/* ===== Extração de texto do PDF ===== */
+/* ===== Extração de texto do PDF do CRLV ===== */
 function lerPdf(arquivo){
   return new Promise(function(resolve,reject){
     if(typeof pdfjsLib==="undefined"){reject(new Error("pdf.js não carregou. Verifique a internet."));return;}
@@ -191,14 +170,12 @@ function lerPdf(arquivo){
     reader.readAsArrayBuffer(arquivo);
   });
 }
-
 function normalizar(s){
   return String(s||"")
     .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
     .replace(/[^\S\r\n]+/g," ")
     .toUpperCase();
 }
-
 function extrairPlaca(txt){
   var m=txt.match(/\b([A-Z]{3}[\s\-]?[0-9][A-Z0-9][0-9]{2})\b/);
   if(!m)return "";
@@ -206,14 +183,12 @@ function extrairPlaca(txt){
   if(!/^[A-Z]{3}[0-9][A-Z0-9][0-9]{2}$/.test(limpo))return "";
   return limpo;
 }
-
 function extrairRenavam(txt){
   var m=txt.match(/RENAVAM[^\d]{0,20}(\d[\d\s\.\-]{8,15}\d)/);
   if(m){var r=m[1].replace(/\D/g,"");if(r.length>=9&&r.length<=11)return r;}
   var m2=txt.match(/\b(\d{11})\b/);
   return m2?m2[1]:"";
 }
-
 function extrairChassi(txt){
   var m=txt.match(/CHASSI[^\w]{0,20}([A-HJ-NPR-Z0-9]{17})/);
   if(m)return m[1];
@@ -224,7 +199,6 @@ function extrairChassi(txt){
   }
   return "";
 }
-
 function extrairAnos(txt){
   var mAno=txt.match(/ANO\s*(?:FABRICACAO|FAB|MODELO)[^\d]{0,15}(\d{4})[^\d]{0,30}(\d{4})/);
   if(mAno)return {fab:mAno[1],mod:mAno[2]};
@@ -234,7 +208,6 @@ function extrairAnos(txt){
   if(m3)return {fab:m3[1],mod:m3[1]};
   return {fab:"",mod:""};
 }
-
 function preencherDoPdf(textoBruto){
   var txt=normalizar(textoBruto);
   var placa=extrairPlaca(txt);
@@ -246,8 +219,7 @@ function preencherDoPdf(textoBruto){
   var anos=extrairAnos(txt);
   if(anos.fab)$("anoFab").value=anos.fab;
   if(anos.mod)$("anoModelo").value=anos.mod;
-  atualizarExtenso();
-  render();
+  atualizarExtenso();render();
   var achados=[];
   if(placa)achados.push("Placa");
   if(ren)achados.push("Renavam");
@@ -256,14 +228,12 @@ function preencherDoPdf(textoBruto){
   if(anos.mod)achados.push("Ano Modelo");
   return achados;
 }
-
-/* ===== Upload + extração ===== */
 function handleCrlv(e){
   var f=e.target.files&&e.target.files[0];
   var st=$("crlvStatus"),btn=$("btnExtrair");
   if(!f){state.crlvFile=null;st.textContent="Nenhum arquivo anexado.";st.className="hint";if(btn)btn.disabled=true;return;}
   if(f.type&&f.type!=="application/pdf"&&!/\.pdf$/i.test(f.name)){
-    st.textContent="Apenas PDF digital é aceito. Converta o CRLV-e para PDF antes de anexar.";
+    st.textContent="Apenas PDF digital é aceito.";
     st.className="hint";
     if(btn)btn.disabled=true;
     return;
@@ -272,9 +242,8 @@ function handleCrlv(e){
   st.textContent="Anexado: "+f.name+" — clique em Extrair dados.";
   st.className="hint file-ok";
   if(btn)btn.disabled=false;
-  toast("PDF anexado. Clique em Extrair dados.");
+  toast("PDF anexado.");
 }
-
 function extrair(){
   var f=state.crlvFile;
   if(!f){alert("Anexe o CRLV-e em PDF primeiro.");return;}
@@ -282,22 +251,21 @@ function extrair(){
   btn.disabled=true;
   st.textContent="Lendo o PDF...";
   st.className="hint";
-
   lerPdf(f).then(function(texto){
     if(!texto||!texto.trim()){
-      st.textContent="O PDF não contém texto. Provavelmente é escaneado. Use o CRLV-e digital do Detran.";
+      st.textContent="O PDF não contém texto. Provavelmente é escaneado.";
       st.className="hint";
       btn.disabled=false;
       return;
     }
     var achados=preencherDoPdf(texto);
     if(!achados.length){
-      st.textContent="PDF lido, mas nenhum campo do veículo foi reconhecido. Confira manualmente.";
+      st.textContent="PDF lido, mas nenhum campo foi reconhecido.";
       st.className="hint";
     } else {
-      st.textContent="Extraído: "+achados.join(", ")+". Confira e corrija se necessário.";
+      st.textContent="Extraído: "+achados.join(", ")+".";
       st.className="hint file-ok";
-      toast("Dados extraídos. Revise antes de gerar.");
+      toast("Dados extraídos.");
     }
     btn.disabled=false;
   }).catch(function(err){
@@ -307,43 +275,139 @@ function extrair(){
   });
 }
 
-/* ===== Botões ===== */
-function printContract(){render();window.print();}
+/* ===== Geração do PDF com jsPDF ===== */
+function gerarPdf(){
+  if(typeof window.jspdf==="undefined"||!window.jspdf.jsPDF){
+    alert("jsPDF não carregou. Verifique a internet e recarregue a página.");
+    return;
+  }
+  var jsPDF=window.jspdf.jsPDF;
+  var doc=new jsPDF({unit:"mm",format:"a4"});
+  var W=210, H=297, M=15, usable=W-M*2;
+  var y=0;
+  var pageNum=1;
 
-function resetForm(){
-  for(var i=0;i<FIELD_IDS.length;i++){if($(FIELD_IDS[i]))$(FIELD_IDS[i]).value="";}
-  $("parcelas").value=DEF_PARC;
-  if($("crlvFile"))$("crlvFile").value="";
-  if($("crlvStatus")){$("crlvStatus").textContent="Nenhum arquivo anexado.";$("crlvStatus").className="hint";}
-  if($("btnExtrair"))$("btnExtrair").disabled=true;
-  state.crlvFile=null;state.vencimentos={};
-  buildParcelasForm();atualizarExtenso();render();toast("Formulário limpo.");
-}
+  function cabecalho(){
+    doc.setFont("helvetica","bold");
+    doc.setFontSize(9);
+    doc.text(ascii(FIXED.name)+" | CNPJ "+FIXED.cnpj, W/2, 12, {align:"center"});
+    doc.setDrawColor(180);
+    doc.setLineWidth(0.2);
+    doc.line(M,14,W-M,14);
+    y=20;
+  }
+  function rodape(){
+    doc.setFont("helvetica","normal");
+    doc.setFontSize(7.5);
+    doc.setTextColor(120);
+    doc.text("Pagina "+pageNum, W-M, H-8, {align:"right"});
+    doc.text("JAROD - Intermediacao Securitaria", M, H-8);
+    doc.setTextColor(0);
+  }
+  function novaPagina(){
+    rodape();
+    doc.addPage();
+    pageNum++;
+    cabecalho();
+  }
+  function quebra(h){
+    if(y+h>H-14){novaPagina();}
+  }
+  function texto(txt,size,bold,align){
+    size=size||10;
+    bold=!!bold;
+    doc.setFont("helvetica",bold?"bold":"normal");
+    doc.setFontSize(size);
+    var linhas=doc.splitTextToSize(ascii(txt),usable);
+    for(var i=0;i<linhas.length;i++){
+      quebra(5);
+      doc.text(linhas[i],align==="center"?W/2:M,y,align==="center"?{align:"center"}:undefined);
+      y+=5;
+    }
+  }
+  function titulo(txt){
+    quebra(10);
+    y+=2;
+    doc.setFont("helvetica","bold");
+    doc.setFontSize(10);
+    doc.text(ascii(txt),M,y);
+    y+=6;
+  }
+  function espaco(h){y+=h||3;}
 
-function fillDemo(){
-  $("nome").value="CLIENTE EXEMPLO";$("cpf").value="000.000.000-00";$("rg").value="00.000.000-0";
-  $("email").value="cliente@exemplo.com";$("telefone").value="(00) 00000-0000";
-  $("placa").value="ABC1D23";$("renavam").value="01234567890";$("chassi").value="9BWZZZ377VT004251";
-  $("anoFab").value="2014";$("anoModelo").value="2014";
-  $("seguro").value="Seguro / Plano contratado";$("valor").value="1.200,00";$("parcelas").value=DEF_PARC;$("cidade").value="Belo Horizonte/MG";
-  state.vencimentos={};buildParcelasForm();atualizarExtenso();render();toast("Exemplo preenchido.");
-}
+  /* ====== Página 1 ====== */
+  cabecalho();
 
-/* ===== Exposição global ===== */
-window.App={resetForm:resetForm,printContract:printContract,fillDemo:fillDemo,extrair:extrair};
+  doc.setFont("helvetica","bold");
+  doc.setFontSize(12);
+  var tituloLinhas=doc.splitTextToSize("CONTRATO DE PRESTACAO DE SERVICOS DE INTERMEDIACAO SECURITARIA",usable);
+  for(var t=0;t<tituloLinhas.length;t++){
+    doc.text(tituloLinhas[t],W/2,y+5,{align:"center"});
+    y+=6;
+  }
+  doc.setFont("helvetica","normal");
+  doc.setFontSize(9);
+  doc.text("Instrumento particular de adesao e ativacao de seguro, com intermediacao da CONTRATADA",W/2,y,{align:"center"});
+  y+=8;
 
-/* ===== Listeners ===== */
-for(var i=0;i<FIELD_IDS.length;i++){
-  (function(id){
-    var el=$(id);if(!el)return;
-    if(id==="parcelas"){el.addEventListener("input",function(){state.vencimentos={};buildParcelasForm();render();});}
-    else if(id==="valor"){el.addEventListener("input",function(){atualizarExtenso();render();});}
-    else{el.addEventListener("input",render);}
-  })(FIELD_IDS[i]);
-}
-if($("crlvFile"))$("crlvFile").addEventListener("change",handleCrlv);
+  /* Partes */
+  var nome=val("nome",""),cpf=val("cpf",""),rg=val("rg",""),email=val("email",""),tel=val("telefone","");
+  doc.setDrawColor(150);
+  doc.setLineWidth(0.2);
+  var boxTop=y, boxH=34;
+  doc.rect(M,boxTop,usable/2,boxH);
+  doc.rect(M+usable/2,boxTop,usable/2,boxH);
+  doc.setFillColor(235,235,235);
+  doc.rect(M,boxTop,usable/2,6,"F");
+  doc.rect(M+usable/2,boxTop,usable/2,6,"F");
+  doc.setFont("helvetica","bold");
+  doc.setFontSize(9);
+  doc.text("CONTRATANTE",M+2,boxTop+4.2);
+  doc.text("CONTRATADA",M+usable/2+2,boxTop+4.2);
+  doc.setFont("helvetica","normal");
+  doc.setFontSize(8.5);
+  var yL=boxTop+10, xL=M+2, xR=M+usable/2+2;
+  doc.text(ascii("Nome: "+nome),xL,yL);
+  doc.text(ascii("Razao: "+FIXED.name),xR,yL);
+  doc.text(ascii("CPF: "+cpf),xL,yL+4.5);
+  doc.text(ascii("CNPJ: "+FIXED.cnpj),xR,yL+4.5);
+  doc.text(ascii("RG: "+rg),xL,yL+9);
+  doc.text(ascii("E-mail: "+FIXED.email),xR,yL+9);
+  doc.text(ascii("E-mail: "+email),xL,yL+13.5);
+  doc.text(ascii("Telefone: "+FIXED.phone),xR,yL+13.5);
+  doc.text(ascii("Telefone: "+tel),xL,yL+18);
+  y=boxTop+boxH+4;
 
-/* ===== Init ===== */
-buildParcelasForm();atualizarExtenso();render();
+  texto("As partes acima qualificadas tem, entre si, justo e contratado o presente instrumento, que se regera pelas clausulas e condicoes a seguir, as quais declaram ter lido, compreendido e aceito integralmente.",9);
 
-})();
+  titulo("CLAUSULA 1 - DO OBJETO");
+  texto("1.1. O presente contrato tem por objeto formalizar a contratacao dos servicos de intermediacao e assessoria prestados pela CONTRATADA, relacionados ao produto securitario "+val("seguro","")+", bem como o pagamento da respectiva taxa de adesao e ativacao.",9);
+  texto("1.2. A CONTRATADA atua como intermediaria entre o CONTRATANTE e a seguradora. A CONTRATADA nao e seguradora, nao assume risco securitario, nao garante cobertura, nao regula sinistro e nao responde por indenizacoes previstas na apolice.",9);
+  texto("1.3. O produto esta vinculado ao veiculo a seguir identificado:",9);
+
+  /* Tabela veículo */
+  var veh=[["Placa",val("placa","")],["Renavam",val("renavam","")],["Chassi",val("chassi","")],["Ano Fabricacao / Modelo",val("anoFab","")+" / "+val("anoModelo","")]];
+  quebra(veh.length*6+2);
+  var yv=y;
+  for(var k=0;k<veh.length;k++){
+    doc.setFillColor(235,235,235);
+    doc.rect(M,yv,50,6,"F");
+    doc.setDrawColor(150);
+    doc.rect(M,yv,50,6);
+    doc.rect(M+50,yv,usable-50,6);
+    doc.setFont("helvetica","bold");
+    doc.setFontSize(8.5);
+    doc.text(ascii(veh[k][0]),M+2,yv+4);
+    doc.setFont("helvetica","normal");
+    doc.text(ascii(veh[k][1]),M+52,yv+4);
+    yv+=6;
+  }
+  y=yv+4;
+
+  texto("1.4. Este instrumento nao substitui a proposta, a apolice, o certificado, o endosso nem as condicoes gerais do seguro, que permanecem prevalentes para todos os efeitos de cobertura.",9);
+
+  /* ====== Página 2 ====== */
+  novaPagina();
+
+  titulo("CLAUSULA 2 - DO VALOR E DA FORMA DE PAGAMENTO");
+  texto("2.1. Pela intermediacao e adesao, o CONTRATANTE pagara a CONTRATADA o valor total de
