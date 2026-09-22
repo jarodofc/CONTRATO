@@ -136,8 +136,7 @@ function pdfParaImagem(arquivo){
 function rodarOcr(fonteImagem,cbStatus){
   if(typeof Tesseract==="undefined"){alert("Tesseract não carregou. Verifique a internet.");return;}
   Tesseract.recognize(fonteImagem,"por",{logger:function(m){if(m.status==="recognizing text")cbStatus(Math.round(m.progress*100));}})
-  .then(function(res){preencherDoOcr((res.data.text||"").toUpperCase());toast("Dados extraídos. Revise antes de gerar.");})
-  .catch(function(err){alert("Falha no OCR: "+err.message);});
+.then(function(res){console.log("===== TEXTO OCR =====");console.log(res.data.text);console.log("===== FIM =====");preencherDoOcr((res.data.text||"").toUpperCase());toast("Dados extraídos. Revise antes de gerar.");})  .catch(function(err){alert("Falha no OCR: "+err.message);});
 }
 
 function preencherDoOcr(txt){
