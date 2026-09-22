@@ -49,7 +49,7 @@ function getExtenso(){var v=parseMoney(val("valor"));return(!isFinite(v)||v<=0)?
 function atualizarExtenso(){var v=parseMoney(val("valor"));$("valorExtenso").value=(isFinite(v)&&v>0)?numeroParaExtenso(v):"";}
 
 /* ============================================================
-   Templates de tabela
+   Templates
    ============================================================ */
 function renderParcelasRows(n){
   var vp=getValorParcela(),rows="";
@@ -213,7 +213,7 @@ function pdfParaImagem(arquivo){
 }
 
 /* ============================================================
-   OCR (imagem ou PDF escaneado)
+   OCR
    ============================================================ */
 function rodarOcr(fonteImagem,cbStatus){
   if(typeof Tesseract==="undefined"){alert("Tesseract não carregou. Verifique a internet.");return;}
@@ -227,32 +227,37 @@ function rodarOcr(fonteImagem,cbStatus){
   });
 }
 
+/* ============================================================
+   Extração dos quatro campos do CRLV
+   Placa, Renavam, Chassi, Ano Fab / Modelo
+   ============================================================ */
 function preencherDoOcr(txt){
-  var t=String(txt||"").replace(/\s+/g," ").replace(/[º°ª]/g,"").replace(/O(?=\d)/g,"0");
+  var t=String(txt||"").replace(/\s+/g," ");
 
-  /* Placa: aceita padrão antigo ABC1234 e Mercosul ABC1D23 */
+  /* Placa: padrão antigo (ABC1234) ou Mercosul (ABC1D23) */
   var mP=t.match(/\b([A-Z]{3}[0-9][A-Z0-9][0-9]{2})\b/);
   if(mP)$("placa").value=mP[1].substring(0,7);
 
-  /* Renavam: 11 dígitos após rótulo, com ou sem separadores */
-  var mR=t.match(/RENAVAM[^\d]{0,20}((?:\d[\s.\-]?){11})/);
+  /* Renavam: 11 dígitos, aceita separadores após rótulo ou isolado */
+  var mR=t.match(/RENAVAM[^\d]{0,25}((?:\d[\s.\-]?){11})/);
   if(!mR)mR=t.match(/\b((?:\d[\s.\-]?){11})\b/);
   if(mR)$("renavam").value=mR[1].replace(/\D/g,"");
 
-  /* Chassi: 17 caracteres, sem I O Q */
-  var mC=t.match(/CHASSI[^\w]{0,20}([A-HJ-NPR-Z0-9]{17})/);
+  /* Chassi: 17 caracteres, sem I, O e Q (padrão VIN) */
+  var mC=t.match(/CHASSI[^\w]{0,25}([A-HJ-NPR-Z0-9]{17})/);
   if(!mC)mC=t.match(/\b([A-HJ-NPR-Z0-9]{17})\b/);
   if(mC)$("chassi").value=mC[1];
 
   /* Anos: fabricação e modelo, próximos */
-  var mA=t.match(/ANO[^\d]{0,20}(\d{4})[^\d]{0,20}(\d{4})/);
-  if(!mA)mA=t.match(/\b(19\d{2}|20\d{2})\b[^\d]{0,10}\b(19\d{2}|20\d{2})\b/);
+  var mA=t.match(/(?:ANO\s*(?:FAB|FABRICACAO|FABRICAÇÃO|MODELO)[^\d]{0,20})?(\d{4})[^\d]{0,15}(\d{4})/);
+  if(!mA)mA=t.match(/\b(19\d{2}|20\d{2})\b[^\d]{0,15}\b(19\d{2}|20\d{2})\b/);
   if(mA){
     $("anoFab").value=mA[1];
     $("anoModelo").value=mA[2];
   }
 
-  atualizarExtenso();render();
+  atualizarExtenso();
+  render();
 }
 
 /* ============================================================
@@ -286,7 +291,6 @@ function extrair(){
         function proxima(){
           if(p>pdf.numPages){
             var texto=paginas.join("\n");
-            /* Se o texto extraído tem conteúdo relevante, usa; senão, cai no OCR */
             if(/[A-Z]{3}[0-9][A-Z0-9][0-9]{2}/.test(texto.toUpperCase())||texto.replace(/\s/g,"").length>200){
               preencherDoOcr(texto.toUpperCase());
               st.textContent="Extração concluída (PDF digital). Confira os campos.";
@@ -365,11 +369,11 @@ function fillDemo(){
   $("rg").value="00.000.000-0";
   $("email").value="cliente@exemplo.com";
   $("telefone").value="(00) 00000-0000";
-  $("placa").value="ABC1D23";
-  $("renavam").value="01234567890";
-  $("chassi").value="9BWZZZ377VT004251";
-  $("anoFab").value="2014";
-  $("anoModelo").value="2014";
+  $("placa").value="SHB2A43";
+  $("renavam").value="01316253888";
+  $("chassi").value="9BD358AFNNYL93309";
+  $("anoFab").value="2022";
+  $("anoModelo").value="2022";
   $("seguro").value="Seguro / Plano contratado";
   $("valor").value="1.200,00";
   $("parcelas").value=DEF_PARC;
