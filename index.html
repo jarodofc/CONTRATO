@@ -43,8 +43,8 @@
           <div class="field"><label>Ano Modelo</label><input id="anoModelo" placeholder="2014" maxlength="4" inputmode="numeric"></div>
         </div>
         <div class="field">
-          <label>CRLV (PDF digital ou imagem)</label>
-          <input id="crlvFile" type="file" accept="application/pdf,image/*">
+          <label>CRLV-e (PDF digital do Detran)</label>
+          <input id="crlvFile" type="file" accept="application/pdf">
           <button id="btnExtrair" class="btn" style="width:100%;margin-top:6px" onclick="App.extrair()" disabled>Extrair dados do CRLV</button>
           <p class="hint" id="crlvStatus" style="margin-top:6px">Nenhum arquivo anexado.</p>
         </div>
@@ -92,7 +92,6 @@
 <div class="toast" id="toast"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.0.4/dist/tesseract.min.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
